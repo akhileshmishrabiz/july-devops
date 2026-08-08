@@ -1,3 +1,42 @@
+# how to run the app
+# this will need a database and cmnecy to it.
+
+# Postgres database
+
+host: databse endpoint : localhost(127.0.0.1)
+port: 5432
+username: app_user
+password: Admin1234
+db_name: flaskapp
+
+app will need a db_link
+
+# postgresql://postgres:Admin1234@localhost:5432/flaskapp
+
+DB_LINK="postgresql://<username>:<password>@<host>:<port>/<db_name>"
+
+export DB_LINK=postgresql://postgres:Admin1234@localhost:5432/flaskapp
+
+```bash
+sudo dnf update -y
+sudo dnf install postgresql15-server postgresql15 -y
+sudo postgresql-setup --initdb
+sudo systemctl start postgresql
+sudo systemctl enable postgresql
+
+sudo -u postgres psql
+
+ALTER USER app_user WITH PASSWORD 'Admin1234';
+CREATE DATABASE flaskapp OWNER app_user;
+
+
+```
+
+
+
+
+
+
 # LivingDevOps Portal
 
 A Flask bootcamp app that combines a **student portal**, **sprint retrospectives**, **Jira-style ticketing**, and **team management** — containerized for AWS ECS (Day 9).
