@@ -24,17 +24,39 @@ sudo postgresql-setup --initdb
 sudo systemctl start postgresql
 sudo systemctl enable postgresql
 
+sudo sed -i '/^host/ s/ident$/scram-sha-256/' /var/lib/pgsql/data/pg_hba.conf
+sudo systemctl reload postgresql
+
 sudo -u postgres psql
 
-ALTER USER app_user WITH PASSWORD 'Admin1234';
-CREATE DATABASE flaskapp OWNER app_user;
+ALTER USER postgres WITH PASSWORD 'Admin1234';
+CREATE DATABASE flaskapp OWNER postgres;
 
+# psql "postgresql://postgres:Admin1234@localhost:5432/flaskapp"
 
 ```
 
+```bash
+sudo syum install git
+git clone <the repo>
+cd <repo/app_path>
+
+python3 -m venv .venv
+source .venv/bin/activate
+chmod u+x run.sh
+
+export DB_LINK=postgresql://postgres:Admin1234@localhost:5432/flaskapp
+./run.sh
+```
+
+# test auth psql "postgresql://postgres:Admin1234@localhost:5432/flaskapp"
 
 
+# backup the db
+```bash
+pg_dump "postgresql://postgres:Admin1234@localhost:5432/flaskapp" -F c -f flaskapp.dump
 
+```
 
 
 # LivingDevOps Portal

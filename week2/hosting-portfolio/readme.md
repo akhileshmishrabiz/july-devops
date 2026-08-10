@@ -27,9 +27,8 @@ sudo systemctl reload nginx
 
 ```
 
-
 ```bash
-sudo certbot --nginx -d mansipandey.in 
+sudo certbot --nginx -d mansipandey.in -d www.mansipandey.in
 ```
 
 # /var/log/letsencrypt/letsencrypt.log
