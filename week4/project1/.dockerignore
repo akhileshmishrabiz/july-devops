@@ -1,0 +1,12 @@
+# Match these in any subdirectory (Docker does not recurse like gitignore)
+**/.venv
+**/.venv/**
+**/__pycache__
+**/__pycache__/**
+**/.pytest_cache
+**/.pytest_cache/**
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/*.pyw
+**/*.pyz
