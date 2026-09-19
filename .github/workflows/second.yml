@@ -10,7 +10,7 @@ on:
         description: "pick a color"
         required: false
         default: "blue"
-        options:
+        choices:
           - red
           - green
           - blue
