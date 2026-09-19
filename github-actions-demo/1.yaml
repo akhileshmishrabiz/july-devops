@@ -23,7 +23,6 @@ jobs:
            hostname
 
   job3:
-    needs: job2
     runs-on: ubuntu-latest
     steps:
 
@@ -31,29 +30,4 @@ jobs:
         run: |
           ls -al
           uptime
-          ifconfig
-
-  job4:
-    needs: job1
-    runs-on: windows-latest
-    steps:
-
-      - name: step6
-        run: |
-          echo "Hello, world! from step6"
-          # some windows commands
-          ipconfig
-          
-
-  job5:
-    needs: job3
-    runs-on: macos-latest
-    needs: job4
-    steps:
-
-      - name: step7
-        run: |
-          echo "Hello, world! from step7"
-          uname -a
-          date
-          hostname
+          whoami
