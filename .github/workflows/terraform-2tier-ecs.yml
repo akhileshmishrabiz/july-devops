@@ -10,10 +10,34 @@ on:
   #   branches:
   #     - main
   workflow_dispatch:
+    inputs:
+      plan_apply_destroy:
+        description: "Plan, Apply, or Destroy"
+        type: choice
+        required: true
+        default: "plan"
+        options:
+          - plan
+          - apply
+          - destroy
+      infra_path:
+        description: "Path to the Terraform infrastructure"
+        type: string
+        required: true
+        default: "terraform-2tier-ecs/infra"
+
+      tf_version:
+        description: "Terraform version"
+        type: string
+        required: true
+        default: "1.16.0"
+
 
 env:
-  TF_VERSION: 1.16.0
-  infra_path: terraform-2tier-ecs/infra
+  # TF_VERSION: 1.16.0
+  # infra_path: terraform-2tier-ecs/infra
+  # infra_path: ${{ inputs.infra_path }}
+  TF_VERSION: ${{ inputs.tf_version }}
   AWS_REGION: ap-south-1
 
 jobs:
@@ -39,6 +63,6 @@ jobs:
         working-directory: ${{ env.infra_path }}
         run: terraform init
 
-      - name: Plan Terraform
+      - name: ${{ inputs.plan_apply_destroy }} Terraform
         working-directory: ${{ env.infra_path }}
-        run: terraform plan
+        run: terraform ${{ inputs.plan_apply_destroy }}
