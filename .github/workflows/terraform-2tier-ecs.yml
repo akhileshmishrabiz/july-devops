@@ -36,8 +36,8 @@ jobs:
           terraform_version: ${{ env.TF_VERSION }}
 
       - name: Initialize Terraform
-          working-directory: ${{ env.PATH }}
-          run: terraform init
+        working-directory: ${{ env.PATH }}
+        run: terraform init
 
       - name: Plan Terraform
         working-directory: ${{ env.PATH }}
