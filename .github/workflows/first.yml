@@ -1,18 +1,33 @@
-name: Docker Image CI
+name: first workflow
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
 
 jobs:
-
-  build:
-
+  job1:
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v4
-    - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
+      - name: step1
+        uses: actions/checkout@v4
+      - name: step2
+        run: echo "Hello, world! from step2"
+
+  job2:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: step4
+        run: |
+           echo "Hello, world! from step4"
+           date
+           hostname
+
+  job3:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: step5
+        run: |
+          ls -al
+          uptime
+          whoami
