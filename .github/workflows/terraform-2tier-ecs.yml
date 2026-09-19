@@ -13,7 +13,7 @@ on:
 
 env:
   TF_VERSION: 1.16.0
-  PATH: terraform-2tier-ecs/infra
+  infra_path: terraform-2tier-ecs/infra
   AWS_REGION: ap-south-1
 
 jobs:
@@ -36,9 +36,9 @@ jobs:
           terraform_version: ${{ env.TF_VERSION }}
 
       - name: Initialize Terraform
-        working-directory: ${{ env.PATH }}
+        working-directory: ${{ env.infra_path }}
         run: terraform init
 
       - name: Plan Terraform
-        working-directory: ${{ env.PATH }}
+        working-directory: ${{ env.infra_path }}
         run: terraform plan
