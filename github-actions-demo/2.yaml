@@ -1,0 +1,58 @@
+name: first workflow
+
+on:
+  push:
+
+jobs:
+  job1:
+    runs-on: ubuntu-latest
+    steps:
+      - name: step1
+        uses: actions/checkout@v4
+      - name: step2
+        run: echo "Hello, world! from step2"
+
+  job2:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: step4
+        run: |
+           echo "Hello, world! from step4"
+           date
+           hostname
+
+  job3:
+    needs: job2
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: step5
+        run: |
+          ls -al
+          uptime
+          ifconfig
+
+  job4:
+    needs: job1
+    runs-on: windows-latest
+    steps:
+
+      - name: step6
+        run: |
+          echo "Hello, world! from step6"
+          # some windows commands
+          ipconfig
+          
+
+  job5:
+    needs: job3
+    runs-on: macos-latest
+    steps:
+
+      - name: step7
+        run: |
+          echo "Hello, world! from step7"
+          uname -a
+          date
+          hostname
