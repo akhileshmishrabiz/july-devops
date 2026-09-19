@@ -48,7 +48,6 @@ jobs:
   job5:
     needs: job3
     runs-on: macos-latest
-    needs: job4
     steps:
 
       - name: step7
