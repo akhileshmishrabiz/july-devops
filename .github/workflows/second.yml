@@ -1,7 +1,23 @@
-name: env scope demo
+name: inputs demo with secrets
 
 on:
   workflow_dispatch:
+    inputs:
+      input1:
+        description: "Input 1"
+        required: true
+      input2:
+        description: "pick a color"
+        required: false
+        default: "blue"
+        options:
+          - red
+          - green
+          - blue
+          - yellow
+          - purple
+          - orange
+          - brown
 
 
 env:
@@ -10,48 +26,15 @@ env:
 
 jobs:
   job1:
-    env:
-      three: "j3-env"
-      four: "j4-env"
     runs-on: ubuntu-latest
     steps:
-      - name: step1
-        env:
-          five: "s1-env"
-          six: "s2-env"
-
+      - name: print all inputs
         run: |
-          echo "one: ${{ env.one }}"
-          echo "two: ${{ env.two }}"
-          echo "three: ${{ env.three }}"
-          echo "four: ${{ env.four }}"
-          echo "five: ${{ env.five }}"
-          echo "six: ${{ env.six }}"
+          echo "input1: ${{ inputs.input1 }}"
+          echo "input2: ${{ inputs.input2 }}"
 
       - name: print all env
         run: |
           echo "one: ${{ env.one }}"
           echo "two: ${{ env.two }}"
-          echo "three: ${{ env.three }}"
-          echo "four: ${{ env.four }}"
-          echo "five: ${{ env.five }}"
-          echo "six: ${{ env.six }}"
-
-      
-
-
-
-  job2:
-    runs-on: ubuntu-latest
-    steps:
-      - name: print all env
-        run: |
-          echo "one: ${{ env.one }}"
-          echo "two: ${{ env.two }}"
-          echo "three: ${{ env.three }}"
-          echo "four: ${{ env.four }}"
-          echo "five: ${{ env.five }}"
-          echo "six: ${{ env.six }}"
-          
-
-    
+          echo "secret: ${{ secrets.SECRET_V1 }}"

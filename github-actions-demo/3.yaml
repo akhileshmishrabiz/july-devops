@@ -1,0 +1,57 @@
+name: env scope demo
+
+on:
+  workflow_dispatch:
+
+
+env:
+  one: "w1-env"
+  two: "w2-env"
+
+jobs:
+  job1:
+    env:
+      three: "j3-env"
+      four: "j4-env"
+    runs-on: ubuntu-latest
+    steps:
+      - name: step1
+        env:
+          five: "s1-env"
+          six: "s2-env"
+
+        run: |
+          echo "one: ${{ env.one }}"
+          echo "two: ${{ env.two }}"
+          echo "three: ${{ env.three }}"
+          echo "four: ${{ env.four }}"
+          echo "five: ${{ env.five }}"
+          echo "six: ${{ env.six }}"
+
+      - name: print all env
+        run: |
+          echo "one: ${{ env.one }}"
+          echo "two: ${{ env.two }}"
+          echo "three: ${{ env.three }}"
+          echo "four: ${{ env.four }}"
+          echo "five: ${{ env.five }}"
+          echo "six: ${{ env.six }}"
+
+      
+
+
+
+  job2:
+    runs-on: ubuntu-latest
+    steps:
+      - name: print all env
+        run: |
+          echo "one: ${{ env.one }}"
+          echo "two: ${{ env.two }}"
+          echo "three: ${{ env.three }}"
+          echo "four: ${{ env.four }}"
+          echo "five: ${{ env.five }}"
+          echo "six: ${{ env.six }}"
+          
+
+    
