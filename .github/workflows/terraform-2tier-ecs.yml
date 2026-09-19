@@ -1,0 +1,37 @@
+# aws auth 
+# terraform version 1.16.0
+# terraform path terraform-2tier-ecs/infra
+
+
+name: terraform-2tier-ecs
+
+on:
+  # push:
+  #   branches:
+  #     - main
+  workflow_dispatch:
+
+env:
+  TF_VERSION: 1.16.0
+  TF_PATH: terraform-2tier-ecs/infra
+
+jobs:
+  terraform-plan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Initialize Terraform
+        run: 
+          cd ${{ env.TF_PATH }}
+          terraform init
+
+      - name: Plan Terraform
+        working-directory: ${{ env.TF_PATH }}
+        run: terraform plan
