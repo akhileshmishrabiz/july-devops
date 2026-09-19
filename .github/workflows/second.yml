@@ -4,13 +4,15 @@ on:
   workflow_dispatch:
     inputs:
       input1:
+        type: string
         description: "Input 1"
         required: true
       input2:
         description: "pick a color"
+        type: choice
         required: false
         default: "blue"
-        choices:
+        options:
           - red
           - green
           - blue
