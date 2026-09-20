@@ -60,3 +60,16 @@ docker build  --platform linux/amd64 -t 879381241087.dkr.ecr.ap-south-1.amazonaw
 aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 879381241087.dkr.ecr.ap-south-1.amazonaws.com
 
 docker push 879381241087.dkr.ecr.ap-south-1.amazonaws.com/dev-tf2t:1.0
+
+
+
+dummy
+
+arn:aws:secretsmanager:ap-south-1:879381241087:secret:dummy-HdyE1Y
+
+aws secretsmanager restore-secret  --secret-id dummy
+
+
+aws secretsmanager delete-secret \
+  --secret-id dev-tf2t-rds \
+  --force-delete-without-recovery
