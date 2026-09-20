@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}{% endblock %} · LivingDevOps Portal</title>
+    <title>{% block title %}{% endblock %} · funDevops</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     {% block extra_head %}{% endblock %}
 </head>
@@ -11,36 +11,11 @@
     <header class="site-header">
         <div class="header-inner">
             <a href="{% if current_user.is_authenticated %}{% if current_user.is_guest %}{{ url_for('retro.list_retros') }}{% else %}{{ url_for('main.dashboard') }}{% endif %}{% else %}{{ url_for('auth.login') }}{% endif %}" class="brand">
-                <span class="brand-title">LivingDevOps Portal</span>
+                <span class="brand-title">funDevops</span>
                 <span class="brand-subtitle">Ship · Respond · Learn</span>
             </a>
 
             {% if current_user.is_authenticated %}
-            <nav class="desktop-nav" aria-label="Main">
-                {% if not current_user.is_guest %}
-                <a href="{{ url_for('main.dashboard') }}" class="nav-link {% if current_endpoint == 'main.dashboard' %}active{% endif %}">Dashboard</a>
-                {% endif %}
-                <a href="{{ url_for('retro.list_retros') }}" class="nav-link {% if current_endpoint and current_endpoint.startswith('retro.') %}active{% endif %}">Retros</a>
-                <a href="{{ url_for('wheel.list_wheels') }}" class="nav-link {% if current_endpoint and current_endpoint.startswith('wheel.') %}active{% endif %}">Speak Wheel</a>
-                <a href="{{ url_for('games.home') }}" class="nav-link {% if current_endpoint and current_endpoint.startswith('games.') %}active{% endif %}">DevOps Games</a>
-                {% if not current_user.is_guest %}
-                <a href="{{ url_for('incidents.list_incidents') }}" class="nav-link {% if current_endpoint and current_endpoint.startswith('incidents.') %}active{% endif %}">Incidents</a>
-                <a href="{{ url_for('teams.list_teams') }}" class="nav-link {% if current_endpoint and current_endpoint.startswith('teams.') %}active{% endif %}">Teams</a>
-                <a href="{{ url_for('tickets.list_tickets') }}" class="nav-link {% if current_endpoint and current_endpoint.startswith('tickets.') %}active{% endif %}">Tickets</a>
-                <a href="{{ url_for('postmortems.list_postmortems') }}" class="nav-link {% if current_endpoint and current_endpoint.startswith('postmortems.') %}active{% endif %}">Postmortems</a>
-                <div class="nav-dropdown">
-                    <button type="button" class="nav-link nav-dropdown-toggle" aria-haspopup="true">More ▾</button>
-                    <div class="nav-dropdown-menu">
-                        <a href="{{ url_for('main.students') }}">Students</a>
-                        <a href="{{ url_for('main.attendance') }}">Attendance</a>
-                        <a href="{{ url_for('main.classes') }}">Classes</a>
-                        <a href="{{ url_for('main.assignments') }}">Assignments</a>
-                        <a href="{{ url_for('main.announcements') }}">Announcements</a>
-                    </div>
-                </div>
-                {% endif %}
-            </nav>
-
             <div class="header-actions">
                 <span class="user-badge {% if current_user.is_admin %}admin-badge{% elif current_user.is_guest %}guest-badge{% endif %}">
                     {% if current_user.is_guest %}Guest: {% endif %}{{ current_user.label }}{% if current_user.is_admin %} · admin{% endif %}
@@ -49,7 +24,7 @@
                 <a href="{{ url_for('auth.register') }}" class="btn btn-sm btn-secondary">Sign up</a>
                 {% endif %}
                 <a href="{{ url_for('auth.logout') }}" class="logout-link">Logout</a>
-                <button class="hamburger" type="button" aria-label="Open menu">
+                <button class="hamburger" type="button" aria-label="Open navigation" aria-controls="main-menu" aria-expanded="false">
                     <span></span><span></span><span></span>
                 </button>
             </div>
@@ -65,7 +40,8 @@
     <div class="mobile-overlay"></div>
 
     {% if current_user.is_authenticated %}
-    <nav class="mobile-menu" aria-label="Mobile">
+    <nav class="mobile-menu" id="main-menu" aria-label="Main navigation">
+        <p class="menu-label">Navigation</p>
         {% if not current_user.is_guest %}
         <a href="{{ url_for('main.dashboard') }}" class="nav-link">Dashboard</a>
         {% endif %}
@@ -134,11 +110,17 @@
                     mobileMenu.classList.toggle('active');
                     overlay.classList.toggle('active');
                     document.body.classList.toggle('overflow-hidden');
+                    hamburger.setAttribute('aria-expanded', mobileMenu.classList.contains('active'));
                 }
                 hamburger.addEventListener('click', toggleMenu);
                 overlay.addEventListener('click', toggleMenu);
-                window.addEventListener('resize', () => {
-                    if (window.innerWidth > 960 && mobileMenu.classList.contains('active')) toggleMenu();
+                mobileMenu.querySelectorAll('a').forEach(link => {
+                    link.addEventListener('click', () => {
+                        if (mobileMenu.classList.contains('active')) toggleMenu();
+                    });
+                });
+                document.addEventListener('keydown', (event) => {
+                    if (event.key === 'Escape' && mobileMenu.classList.contains('active')) toggleMenu();
                 });
             }
 

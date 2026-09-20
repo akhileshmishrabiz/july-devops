@@ -3,44 +3,48 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<h1 class="page-title">Dashboard</h1>
+<section class="dashboard-hero">
+    <div>
+        <p class="dashboard-eyebrow">funDevops workspace</p>
+        <h1 class="page-title">Dashboard</h1>
+        <p class="dashboard-hero-copy">Welcome back, {{ current_user.label }}. Here is what needs your attention.</p>
+    </div>
+    <div class="dashboard-actions">
+        <a class="btn btn-secondary btn-sm" href="{{ url_for('retro.list_retros') }}">Retros</a>
+        <a class="btn btn-secondary btn-sm" href="{{ url_for('tickets.list_tickets') }}">Tickets</a>
+        <a class="btn btn-primary btn-sm" href="{{ url_for('incidents.list_incidents') }}">Incidents</a>
+    </div>
+</section>
 
-<div class="devops-flow-banner" style="margin-bottom:1.25rem;">
-    <div class="flow-step"><span class="flow-num">1</span> Alert</div>
-    <div class="flow-arrow">→</div>
-    <div class="flow-step"><span class="flow-num">2</span> Incident Response</div>
-    <div class="flow-arrow">→</div>
-    <div class="flow-step"><span class="flow-num">3</span> Tickets</div>
-    <div class="flow-arrow">→</div>
-    <div class="flow-step"><span class="flow-num">4</span> Postmortem</div>
-    <div class="flow-arrow">→</div>
-    <div class="flow-step"><span class="flow-num">5</span> Improve</div>
+<div class="stat-grid dashboard-metrics">
+    <div class="card {% if open_incidents %}stat-card-alert{% endif %}">
+        <p class="metric-label">Active incidents</p>
+        <p class="stat-value">{{ open_incidents|length }}</p>
+        <a class="metric-link" href="{{ url_for('incidents.list_incidents') }}">View incidents →</a>
+    </div>
+    <div class="card">
+        <p class="metric-label">My open tickets</p>
+        <p class="stat-value">{{ my_tickets|length }}</p>
+        <a class="metric-link" href="{{ url_for('tickets.list_tickets', assignee='me') }}">View tickets →</a>
+    </div>
+    <div class="card">
+        <p class="metric-label">On-call shifts</p>
+        <p class="stat-value">{{ on_call_shifts|length }}</p>
+        <a class="metric-link" href="{{ url_for('teams.list_teams') }}">View teams →</a>
+    </div>
 </div>
 
-<div class="stat-grid">
-    <div class="card {% if open_incidents %}stat-card-alert{% endif %}">
-        <h2 class="card-title">Active Incidents</h2>
-        <p class="stat-value">{{ open_incidents|length }}</p>
-        <a href="{{ url_for('incidents.list_incidents') }}">View incidents →</a>
-    </div>
-    <div class="card">
-        <h2 class="card-title">My Open Tickets</h2>
-        <p class="stat-value">{{ my_tickets|length }}</p>
-        <a href="{{ url_for('tickets.list_tickets', assignee='me') }}">View tickets →</a>
-    </div>
-    <div class="card">
-        <h2 class="card-title">On-Call Shifts</h2>
-        <p class="stat-value">{{ on_call_shifts|length }}</p>
-        <a href="{{ url_for('teams.list_teams') }}">View teams →</a>
-    </div>
+<div class="dashboard-section-heading">
+    <h2>Your workspace</h2>
+    <p>Current incidents, shifts, and assigned work</p>
 </div>
 
 {% if open_incidents or my_tickets or on_call_shifts %}
-<div class="two-col-grid" style="margin-bottom:1.25rem;">
+<div class="two-col-grid">
     {% if open_incidents %}
     <div class="card">
         <div class="section-header">
-            <h2 class="card-title" style="margin:0;">🚨 Active Incidents</h2>
+            <h2 class="card-title" style="margin:0;">Active incidents</h2>
             <a href="{{ url_for('incidents.list_incidents') }}">View all</a>
         </div>
         {% for incident in open_incidents %}
@@ -56,7 +60,7 @@
 
     <div class="card">
         <div class="section-header">
-            <h2 class="card-title" style="margin:0;">{% if on_call_shifts %}On-Call & {% endif %}My Tickets</h2>
+            <h2 class="card-title" style="margin:0;">{% if on_call_shifts %}On-call and {% endif %}my tickets</h2>
         </div>
         {% if on_call_shifts %}
         {% for entry in on_call_shifts %}
@@ -78,20 +82,29 @@
         {% endif %}
     </div>
 </div>
+{% else %}
+<div class="card">
+    <p class="empty-state" style="margin:0;">Nothing urgent. Your workspace is clear.</p>
+</div>
 {% endif %}
 
-<div class="stat-grid">
-    <div class="card">
-        <h2 class="card-title">Total Students</h2>
-        <p class="stat-value">{{ total_students }}</p>
+<div class="dashboard-section-heading">
+    <h2>Learning overview</h2>
+    <p>Attendance and upcoming work</p>
+</div>
+
+<div class="learning-overview">
+    <div class="learning-stat">
+        <span>Total students</span>
+        <strong>{{ total_students }}</strong>
     </div>
-    <div class="card">
-        <h2 class="card-title">Today's Attendance</h2>
-        <p class="stat-value">{{ today_attendance }}</p>
+    <div class="learning-stat">
+        <span>Present today</span>
+        <strong>{{ today_attendance }}</strong>
     </div>
-    <div class="card">
-        <h2 class="card-title">Attendance Rate</h2>
-        <p class="stat-value">{{ attendance_rate }}%</p>
+    <div class="learning-stat">
+        <span>Attendance rate</span>
+        <strong>{{ attendance_rate }}%</strong>
     </div>
 </div>
 
@@ -119,7 +132,7 @@
 
     <div class="card">
         <div class="section-header">
-            <h2 class="card-title" style="margin:0;">Upcoming Assignments</h2>
+            <h2 class="card-title" style="margin:0;">Upcoming assignments</h2>
             <a href="{{ url_for('main.assignments') }}">View all</a>
         </div>
         {% if upcoming_assignments %}
