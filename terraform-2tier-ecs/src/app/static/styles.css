@@ -1703,6 +1703,335 @@ body.overflow-hidden {
   }
 }
 
+/* Professional visual system */
+:root {
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
+  --primary-light: #eff6ff;
+  --secondary: #0f172a;
+  --secondary-dark: #020617;
+  --accent-pink: #3b82f6;
+  --accent-mint: #10b981;
+  --accent-sky: #38bdf8;
+  --accent-yellow: #fef3c7;
+  --danger: #dc2626;
+  --success: #059669;
+  --warning: #d97706;
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+  --border-color: #dbe3ee;
+  --border-subtle: #e8edf4;
+  --font-main: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --shadow-fun: 0 8px 24px rgba(15, 23, 42, 0.07);
+  --radius: 12px;
+}
+
+body {
+  background: #f4f7fb;
+  color: var(--text-primary);
+}
+
+.site-header {
+  z-index: 80;
+  background: rgba(255, 255, 255, 0.96);
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+.header-inner {
+  min-height: 68px;
+  padding: 0.75rem 1.5rem;
+}
+
+.brand {
+  width: fit-content;
+  gap: 0;
+}
+
+.brand-title {
+  color: var(--text-primary);
+  font-size: 1.15rem;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+}
+
+.brand-subtitle {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  letter-spacing: 0.02em;
+}
+
+.header-actions {
+  gap: 0.75rem;
+}
+
+.user-badge {
+  background: var(--primary-light);
+  border: 1px solid #bfdbfe;
+  color: var(--primary-dark);
+}
+
+.admin-badge {
+  background: #f8fafc;
+  border-color: var(--border-color);
+  color: var(--text-secondary);
+}
+
+.logout-link {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+.logout-link:hover {
+  color: var(--danger);
+}
+
+.hamburger {
+  display: flex;
+  width: 42px;
+  height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: var(--primary);
+  border: 0;
+  border-radius: 9px;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
+}
+
+.hamburger:hover {
+  background: var(--primary-dark);
+}
+
+.hamburger span {
+  width: 19px;
+  height: 2px;
+  background: white;
+  border-radius: 99px;
+}
+
+.mobile-overlay {
+  z-index: 90;
+  background: rgba(15, 23, 42, 0.48);
+  backdrop-filter: blur(2px);
+}
+
+.mobile-menu {
+  right: max(0px, calc((100vw - 1280px) / 2));
+  z-index: 100;
+  width: min(360px, 90vw);
+  padding: 0 1rem 1.5rem;
+  overflow-y: auto;
+  visibility: hidden;
+  pointer-events: none;
+  background: white;
+  border-left: 1px solid var(--border-color);
+  box-shadow: -16px 0 40px rgba(15, 23, 42, 0.16);
+  transform: translateX(100%);
+  transition: transform 0.22s ease, visibility 0.22s ease;
+}
+
+.mobile-menu.active {
+  right: max(0px, calc((100vw - 1280px) / 2));
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateX(0);
+}
+
+.mobile-menu-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 -1rem 1rem;
+  padding: 1.15rem 1.25rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.mobile-menu-header > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.mobile-menu-header strong {
+  color: var(--text-primary);
+  font-size: 1.05rem;
+}
+
+.menu-label {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+}
+
+.menu-close {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  background: #f1f5f9;
+  border: 0;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.menu-close:hover {
+  background: #e2e8f0;
+  color: var(--text-primary);
+}
+
+.mobile-menu .nav-link {
+  margin-bottom: 0.2rem;
+  padding: 0.7rem 0.8rem;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.mobile-menu .nav-link:hover,
+.mobile-menu .nav-link.active {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+}
+
+.mobile-menu-footer {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.main-content {
+  padding: 2rem 1.5rem 3.5rem;
+}
+
+.card,
+.dashboard-hero {
+  background: white;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-fun);
+}
+
+.dashboard-hero {
+  padding: 1.75rem 2rem;
+}
+
+.dashboard-eyebrow {
+  color: var(--primary);
+}
+
+.page-title {
+  color: var(--text-primary);
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  font-weight: 750;
+  letter-spacing: -0.035em;
+}
+
+.card-title,
+.dashboard-section-heading h2 {
+  letter-spacing: -0.015em;
+}
+
+.stat-value {
+  color: var(--text-primary);
+  font-size: 2.15rem;
+}
+
+.stat-card-alert {
+  border-left: 4px solid var(--danger);
+}
+
+.learning-stat {
+  background: white;
+  border: 1px solid var(--border-color);
+}
+
+.btn {
+  border-radius: 8px;
+}
+
+.btn-primary {
+  background: var(--primary);
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
+}
+
+.btn-primary:hover {
+  background: var(--primary-dark);
+}
+
+.btn-secondary {
+  background: white;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+}
+
+.btn-secondary:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: var(--text-primary);
+}
+
+.form-input,
+input,
+textarea,
+select {
+  border-color: #cbd5e1;
+  border-radius: 8px;
+}
+
+.form-input:focus,
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  outline: none;
+}
+
+.auth-shell {
+  min-height: calc(100vh - 180px);
+}
+
+.auth-card {
+  max-width: 440px;
+  padding: 2rem;
+}
+
+.auth-heading h2 {
+  margin-bottom: 0.35rem;
+  font-size: 1.6rem;
+}
+
+.site-footer {
+  background: white;
+  border-top: 1px solid var(--border-color);
+  box-shadow: none;
+}
+
+@media (max-width: 640px) {
+  .header-inner,
+  .main-content {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .dashboard-hero {
+    padding: 1.35rem;
+  }
+
+  .dashboard-actions {
+    width: 100%;
+  }
+
+  .dashboard-actions .btn {
+    flex: 1;
+  }
+}
+
 @media (max-width: 960px) {
   .ticket-detail-grid {
     grid-template-columns: 1fr;
