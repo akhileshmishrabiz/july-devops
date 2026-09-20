@@ -16,10 +16,10 @@ resource "aws_alb" "app" {
 # target group
 
 resource "aws_alb_target_group" "name" {
-  name     = "${var.environment}-${var.prefix}-alb-tg"
-  port     = var.port
-  protocol = "HTTP"
-  vpc_id   = aws_vpc.main.id
+  name        = "${var.environment}-${var.prefix}-alb-tg"
+  port        = var.port
+  protocol    = "HTTP"
+  vpc_id      = aws_vpc.main.id
   target_type = "ip"
 
   health_check {
@@ -55,15 +55,15 @@ resource "aws_alb_listener" "http" {
 
 # alb lister for port 443
 resource "aws_alb_listener" "https" {
-    load_balancer_arn = aws_alb.app.arn
-    port              = 443
-    protocol          = "HTTPS"
-    ssl_policy        = "ELBSecurityPolicy-2016-08"
-    certificate_arn   = aws_acm_certificate.app_cert.arn
-    
-    default_action {
-        type             = "forward"
-        target_group_arn = aws_alb_target_group.name.arn
-  
-}
+  load_balancer_arn = aws_alb.app.arn
+  port              = 443
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-2016-08"
+  certificate_arn   = aws_acm_certificate.app_cert.arn
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_alb_target_group.name.arn
+
+  }
 }

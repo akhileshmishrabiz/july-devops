@@ -2,9 +2,9 @@
 # aws vpc - 10.0.0.0/16 
 
 resource "aws_vpc" "main" {
-  cidr_block = "10.0.0.0/16"
+  cidr_block           = "10.0.0.0/16"
   enable_dns_hostnames = true
-  enable_dns_support = true
+  enable_dns_support   = true
 
   tags = {
     Name = "${var.environment}-${var.prefix}-main"
@@ -14,8 +14,8 @@ resource "aws_vpc" "main" {
 
 # public subnet - 10.0.1.0/24, 10.0.2.0/24
 resource "aws_subnet" "public_subnet_1" {
-  vpc_id = aws_vpc.main.id
-  cidr_block = "10.0.1.0/24"
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = "10.0.1.0/24"
   availability_zone = "ap-south-1a"
 
   tags = {
@@ -25,8 +25,8 @@ resource "aws_subnet" "public_subnet_1" {
 
 
 resource "aws_subnet" "public_subnet_2" {
-  vpc_id = aws_vpc.main.id
-  cidr_block = "10.0.2.0/24"
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = "10.0.2.0/24"
   availability_zone = "ap-south-1b"
 
   tags = {
@@ -36,8 +36,8 @@ resource "aws_subnet" "public_subnet_2" {
 
 # private subnet - 10.0.3.0/24, 10.0.4.0/24
 resource "aws_subnet" "private_subnet_1" {
-  vpc_id = aws_vpc.main.id
-  cidr_block = "10.0.3.0/24"
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = "10.0.3.0/24"
   availability_zone = "ap-south-1a"
 
   tags = {
@@ -46,8 +46,8 @@ resource "aws_subnet" "private_subnet_1" {
 }
 
 resource "aws_subnet" "private_subnet_2" {
-  vpc_id = aws_vpc.main.id
-  cidr_block = "10.0.4.0/24"
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = "10.0.4.0/24"
   availability_zone = "ap-south-1b"
 
   tags = {
@@ -57,8 +57,8 @@ resource "aws_subnet" "private_subnet_2" {
 
 # rds subnet - 10.0.5.0/24, 10.0.6.0/24
 resource "aws_subnet" "rds_subnet_1" {
-  vpc_id = aws_vpc.main.id
-  cidr_block = "10.0.5.0/24"
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = "10.0.5.0/24"
   availability_zone = "ap-south-1a"
 
   tags = {
@@ -67,8 +67,8 @@ resource "aws_subnet" "rds_subnet_1" {
 }
 
 resource "aws_subnet" "rds_subnet_2" {
-  vpc_id = aws_vpc.main.id
-  cidr_block = "10.0.6.0/24"
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = "10.0.6.0/24"
   availability_zone = "ap-south-1b"
 
   tags = {
@@ -80,7 +80,7 @@ resource "aws_subnet" "rds_subnet_2" {
 # public route table
 
 resource "aws_route_table" "public_route_table" {
-  vpc_id = aws_vpc.main.id 
+  vpc_id = aws_vpc.main.id
 
   tags = {
     Name = "${var.environment}-${var.prefix}-public-route-table"
@@ -100,23 +100,23 @@ resource "aws_route_table" "private_route_table" {
 
 # implicit dependency
 resource "aws_route_table_association" "public_subnet_1_association" {
-  subnet_id = aws_subnet.public_subnet_1.id
+  subnet_id      = aws_subnet.public_subnet_1.id
   route_table_id = aws_route_table.public_route_table.id
 }
 
 resource "aws_route_table_association" "public_subnet_2_association" {
-  subnet_id = aws_subnet.public_subnet_2.id
+  subnet_id      = aws_subnet.public_subnet_2.id
   route_table_id = aws_route_table.public_route_table.id
 }
 # associate private subnet -> private route table
 
 resource "aws_route_table_association" "private_subnet_1_association" {
-  subnet_id = aws_subnet.private_subnet_1.id
+  subnet_id      = aws_subnet.private_subnet_1.id
   route_table_id = aws_route_table.private_route_table.id
 }
 
 resource "aws_route_table_association" "private_subnet_2_association" {
-  subnet_id = aws_subnet.private_subnet_2.id
+  subnet_id      = aws_subnet.private_subnet_2.id
   route_table_id = aws_route_table.private_route_table.id
 }
 # internet gateway
@@ -141,9 +141,9 @@ resource "aws_internet_gateway" "main" {
 # route to internet gateway
 
 resource "aws_route" "public" {
-  route_table_id            = aws_route_table.public_route_table.id
-  destination_cidr_block    = "0.0.0.0/0"
-  gateway_id = aws_internet_gateway.main.id
+  route_table_id         = aws_route_table.public_route_table.id
+  destination_cidr_block = "0.0.0.0/0"
+  gateway_id             = aws_internet_gateway.main.id
 }
 
 

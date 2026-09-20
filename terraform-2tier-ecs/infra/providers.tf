@@ -3,8 +3,8 @@ provider "aws" {
   default_tags {
     tags = {
       Terraform = "true"
-      Repo = "july-devops/terraform-2tier-ecs"
-      
+      Repo      = "july-devops/terraform-2tier-ecs"
+
     }
   }
 }

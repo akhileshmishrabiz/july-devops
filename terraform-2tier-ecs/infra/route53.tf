@@ -9,11 +9,11 @@ data "aws_route53_zone" "main" {
 resource "aws_route53_record" "app_record" {
   zone_id = data.aws_route53_zone.main.zone_id
   # zone id -> for public hosted zone
-  name    = "${var.subdomain_name}.${var.domain_name}"
-  type    = "A"
+  name = "${var.subdomain_name}.${var.domain_name}"
+  type = "A"
 
   alias {
-    name                   = aws_alb.app.dns_name
+    name = aws_alb.app.dns_name
     # zone id -> for alb
     zone_id                = aws_alb.app.zone_id
     evaluate_target_health = true

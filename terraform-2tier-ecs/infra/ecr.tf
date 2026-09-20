@@ -3,6 +3,6 @@
 
 # __generated__ by Terraform from "dev-tf2t"
 resource "aws_ecr_repository" "ecr_repo" {
-  name                 = "dev-tf2t"
-  region               = "ap-south-1"
+  name   = "dev-tf2t"
+  region = "ap-south-1"
 }

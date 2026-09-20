@@ -45,7 +45,7 @@ resource "aws_ecs_task_definition" "service" {
   execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
 
 
-  depends_on = [ aws_cloudwatch_log_group.ecs_log_group ]
+  depends_on = [aws_cloudwatch_log_group.ecs_log_group]
 }
 
 # ecs services 

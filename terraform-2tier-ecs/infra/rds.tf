@@ -12,13 +12,13 @@ resource "aws_db_subnet_group" "default" {
 # rds password
 
 resource "random_password" "password" {
-  length  = 10
-  special = false
+  length           = 10
+  special          = false
   override_special = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 }
 
 output "rds_password" {
-  value = random_password.password.result
+  value     = random_password.password.result
   sensitive = true
 }
 # secret manager
@@ -27,20 +27,20 @@ output "rds_password" {
 # ubnet group, SG, password, user, all the infor
 
 resource "aws_db_instance" "rds_instance" {
-  identifier                  = "${var.environment}-${var.prefix}-rds"
-  allocated_storage           = 20
-  backup_retention_period     = 7
-  db_subnet_group_name        = aws_db_subnet_group.default.name
-  engine                      = "postgres"
-  engine_version              = local.postgres_version
-  instance_class              = var.rds_instance_class
-  db_name                     = var.prefix
-  multi_az                    = false # Custom for Oracle does not support multi-az
-  password                    = random_password.password.result
-  username                    = "postgres"
-  storage_encrypted           = false
-  vpc_security_group_ids      = [aws_security_group.rds_sg.id]
-  skip_final_snapshot         = true
+  identifier              = "${var.environment}-${var.prefix}-rds"
+  allocated_storage       = 20
+  backup_retention_period = 7
+  db_subnet_group_name    = aws_db_subnet_group.default.name
+  engine                  = "postgres"
+  engine_version          = local.postgres_version
+  instance_class          = var.rds_instance_class
+  db_name                 = var.prefix
+  multi_az                = false # Custom for Oracle does not support multi-az
+  password                = random_password.password.result
+  username                = "postgres"
+  storage_encrypted       = false
+  vpc_security_group_ids  = [aws_security_group.rds_sg.id]
+  skip_final_snapshot     = true
 
   tags = {
     Name = "${var.environment}-${var.prefix}-rds"

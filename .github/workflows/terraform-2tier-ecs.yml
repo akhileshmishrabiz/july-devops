@@ -46,7 +46,13 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
-
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+      - name: terraform fmt check
+        working-directory: ${{ env.infra_path }}
+        run: terraform fmt --check
       - name: Set up AWS CLI
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -54,15 +60,16 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v4
-        with:
-          terraform_version: ${{ env.TF_VERSION }}
-
       - name: Initialize Terraform
         working-directory: ${{ env.infra_path }}
         run: terraform init
 
       - name: ${{ inputs.plan_apply_destroy }} Terraform
+        if: inputs.plan_apply_destroy == 'plan'
         working-directory: ${{ env.infra_path }}
         run: terraform ${{ inputs.plan_apply_destroy }}
+
+      - name: ${{ inputs.plan_apply_destroy }} Terraform
+        if: inputs.plan_apply_destroy == 'apply' || inputs.plan_apply_destroy == 'destroy'
+        working-directory: ${{ env.infra_path }}
+        run: terraform ${{ inputs.plan_apply_destroy }} -auto-approve
