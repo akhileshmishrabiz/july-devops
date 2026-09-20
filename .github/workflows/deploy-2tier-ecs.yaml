@@ -15,6 +15,7 @@ env:
   AWS_REGION: ap-south-1
   ECR_REPO_NAME: dev-tf2t
   AWS_ACCOUNT_ID: 879381241087
+  app_path: terraform-2tier-ecs/src
 
 
   # ECR_REPO_URI: ${{ secrets.ECR_REPO_URI }}
@@ -46,7 +47,9 @@ jobs:
           aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
 
       - name: Build and push Docker image
+        working-directory: ${{ env.app_path }}
         run: |
+
           docker build -t ${{ env.ECR_REPO_NAME }}:latest .
           docker tag ${{ env.ECR_REPO_NAME }}:latest ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO_NAME }}:latest
           docker push ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO_NAME }}:latest
