@@ -35,6 +35,9 @@ function Navbar() {
             <Link to="/leaderboard" className="hover:text-gray-300 transition-colors">
               Leaderboard
             </Link>
+            <Link to="/games/linux-troubleshooting" className="hover:text-green-300 transition-colors">
+              Linux Lab
+            </Link>
             <Link to="/wiki" className="hover:text-gray-300 transition-colors">
               Wiki
             </Link>

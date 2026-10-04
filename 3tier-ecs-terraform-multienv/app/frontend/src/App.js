@@ -8,6 +8,7 @@ import QuestionManager from './components/QuestionManager';
 import WikiList from './components/wiki/WikiList';
 import WikiPage from './components/wiki/WikiPage';
 import WikiEditor from './components/wiki/WikiEditor';
+import LinuxTroubleshootingGame from './components/LinuxTroubleshootingGame';
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/quiz/:topic" element={<Quiz />} />
+          <Route path="/games/linux-troubleshooting" element={<LinuxTroubleshootingGame />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/manage-questions" element={<QuestionManager />} />
           
