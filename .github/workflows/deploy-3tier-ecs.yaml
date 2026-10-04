@@ -58,8 +58,8 @@ jobs:
     env:
       ECS_CLUSTER: dev-july26bootcamp-devopsdojo
       ECS_TASK_DEFINITION: dev-july26bootcamp-devopsdojo-backend
-      ECS_SECURITY_GROUP: sg-0b16780f9fc87e0c4
-      ECS_SUBNET: subnet-0f4d4040b5910bc83
+      ECS_SECURITY_GROUP: sg-0bd93caf75c317e90
+      ECS_SUBNET: subnet-06266146d355868b3
       CONTAINER_NAME: backend-app
     steps:
       - name: Checkout code
