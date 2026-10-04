@@ -39,6 +39,14 @@ resource "aws_iam_policy" "task_execution_policy" {
           "logs:PutLogEvents"
         ]
         Resource = "${aws_cloudwatch_log_group.ecs_log_group.arn}:*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret"
+        ]
+        Resource = aws_secretsmanager_secret.rds_password.arn
       }
     ]
   })

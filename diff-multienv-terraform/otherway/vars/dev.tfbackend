@@ -1,0 +1,6 @@
+# Backend configuration for dev environment
+
+bucket = "state-bucket-879381241087"
+key = "diff-multienv-terraform/dev/terraform.tfstate"
+region = "ap-south-1"
+encrypt = true

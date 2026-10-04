@@ -18,10 +18,17 @@ resource "aws_ecs_task_definition" "service" {
       name      = var.container_name
       image     = var.app_image
       essential = true
-      environment = [
+      # environment = [
+      #   {
+      #     name = "DB_LINK"
+      #     value = "postgresql://postgres:${random_password.password.result}@${aws_db_instance.rds_instance.address}/${aws_db_instance.rds_instance.db_name}"
+      #   }
+      # ]
+
+      secrets = [
         {
-          name  = "DB_LINK"
-          value = "postgresql://postgres:${random_password.password.result}@${aws_db_instance.rds_instance.address}/${aws_db_instance.rds_instance.db_name}"
+          name      = "DB_LINK"
+          valueFrom = aws_secretsmanager_secret.rds_password.arn
         }
       ]
       portMappings = [
@@ -54,7 +61,7 @@ resource "aws_ecs_task_definition" "service" {
 resource "aws_ecs_service" "app_service" {
   name            = "${var.environment}-${var.prefix}-ecs-service"
   cluster         = aws_ecs_cluster.ecs_cluster.id
-  desired_count   = 2
+  desired_count   = 1
   launch_type     = "FARGATE"
   task_definition = aws_ecs_task_definition.service.arn
 

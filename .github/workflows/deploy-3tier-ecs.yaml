@@ -1,0 +1,146 @@
+---
+name: ECS DEV 3-Tier Build Deploy
+
+on:
+  push:
+    branches:
+      - main
+    # Only trigger when source files change, not on every push to main
+    paths:
+      - '3tier-ecs-terraform-multienv/app/backend/**'
+      - '3tier-ecs-terraform-multienv/app/frontend/**'
+  # Allow manual trigger from GitHub Actions UI
+  workflow_dispatch:
+
+env:
+  AWS_REGION: ap-south-1
+
+jobs:
+  build-and-push-image:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        services:
+          - name: backend
+            path: 3tier-ecs-terraform-multienv/app/backend
+            ecr_repo: 879381241087.dkr.ecr.ap-south-1.amazonaws.com/dev-devopsdojo-backend
+          - name: frontend
+            path: 3tier-ecs-terraform-multienv/app/frontend
+            ecr_repo: 879381241087.dkr.ecr.ap-south-1.amazonaws.com/dev-devopsdojo-frontend
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build ${{ matrix.services.name }} image
+        run: |
+          cd ${{ matrix.services.path }}
+          docker buildx build --platform linux/amd64 --push \
+            -t ${{ matrix.services.ecr_repo }}:${{ github.sha }} \
+            -t ${{ matrix.services.ecr_repo }}:latest .
+
+  
+  migration:
+    needs: build-and-push-image
+    runs-on: ubuntu-latest
+    env:
+      ECS_CLUSTER: dev-july26bootcamp-devopsdojo
+      ECS_TASK_DEFINITION: dev-july26bootcamp-devopsdojo-backend
+      ECS_SECURITY_GROUP: sg-0b16780f9fc87e0c4
+      ECS_SUBNET: subnet-0f4d4040b5910bc83
+      CONTAINER_NAME: backend-app
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Run database migration via ECS task
+        run: |
+          TASK_ARN=$(aws ecs run-task --cluster ${{ env.ECS_CLUSTER }} \
+            --launch-type FARGATE \
+            --task-definition ${{ env.ECS_TASK_DEFINITION }} \
+            --network-configuration "awsvpcConfiguration={subnets=[${{ env.ECS_SUBNET }}],securityGroups=[${{ env.ECS_SECURITY_GROUP }}],assignPublicIp=DISABLED}" \
+            --overrides '{"containerOverrides":[{"name":"${{ env.CONTAINER_NAME }}","command":["/bin/sh","migrate.sh"]}]}' \
+            --query 'tasks[0].taskArn' --output text)
+
+          echo "Migration task started: $TASK_ARN"
+          aws ecs wait tasks-stopped --cluster ${{ env.ECS_CLUSTER }} --tasks "$TASK_ARN"
+
+          EXIT_CODE=$(aws ecs describe-tasks --cluster ${{ env.ECS_CLUSTER }} --tasks "$TASK_ARN" \
+            --query 'tasks[0].containers[0].exitCode' --output text)
+          STOP_REASON=$(aws ecs describe-tasks --cluster ${{ env.ECS_CLUSTER }} --tasks "$TASK_ARN" \
+            --query 'tasks[0].stoppedReason' --output text)
+
+          if [ "$EXIT_CODE" != "0" ]; then
+            echo "Migration failed with exit code $EXIT_CODE (reason: $STOP_REASON)"
+            exit 1
+          fi  
+
+          echo "Migration completed successfully"
+
+  deploy-ecs-service:
+    needs: [build-and-push-image, migration]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        services:
+          - name: backend
+            task_def: dev-july26bootcamp-devopsdojo-backend
+            ecs_service: dev-july26bootcamp-devopsdojo-backend
+            ecs_cluster: dev-july26bootcamp-devopsdojo
+            ecr_repo: 879381241087.dkr.ecr.ap-south-1.amazonaws.com/dev-devopsdojo-backend
+            
+          - name: frontend
+            task_def: dev-july26bootcamp-devopsdojo-frontend
+            ecs_service: dev-july26bootcamp-devopsdojo-frontend
+            ecs_cluster: dev-july26bootcamp-devopsdojo
+            ecr_repo: 879381241087.dkr.ecr.ap-south-1.amazonaws.com/dev-devopsdojo-frontend
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Download ${{ matrix.services.name }} task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition ${{ matrix.services.task_def }} \
+            --region ${{ env.AWS_REGION }} \
+            --query taskDefinition \
+            > task-definition.json
+
+      - name: Update ${{ matrix.services.name }} task definition
+        run: |
+          jq '.containerDefinitions[0].image = "${{ matrix.services.ecr_repo }}:${{ github.sha }}"' \
+            task-definition.json > task-definition-updated.json
+
+      - name: Deploy ${{ matrix.services.name }} to Amazon ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: task-definition-updated.json
+          service: ${{ matrix.services.ecs_service }}
+          cluster: ${{ matrix.services.ecs_cluster }}
+          wait-for-service-stability: false

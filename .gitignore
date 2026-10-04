@@ -222,3 +222,7 @@ __marimo__/
 .terraform.lock.hcl
 *.tfstate
 *.tfstate.*
+
+
+.toffee/
+*.toffee

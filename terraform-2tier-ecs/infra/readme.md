@@ -73,3 +73,10 @@ aws secretsmanager restore-secret  --secret-id dummy
 aws secretsmanager delete-secret \
   --secret-id dev-tf2t-rds \
   --force-delete-without-recovery
+
+
+
+  879381241087.dkr.ecr.ap-south-1.amazonaws.com/dev-tf2t:1.0
+  ecr_uri/ECR_REPO_NAME:image_tag
+
+  AWS_ACCOUNT.dkr.ecr.AWS_REGION.amazonaws.com/

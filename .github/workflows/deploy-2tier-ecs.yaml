@@ -1,9 +1,11 @@
 name: Deploy 2 Tier ECS
 
 on:
-  # push:
-  #   branches:
-  #     - main
+  push:
+    branches:
+      - main
+    paths:
+      - 'terraform-2tier-ecs/src/**'
   workflow_dispatch:
 
 env:
@@ -124,4 +126,4 @@ jobs:
           task-definition: task-definition.json
           service: ${{ env.ECS_SERVICE_NAME }}
           cluster: ${{ env.ECS_CLUSTER_NAME }}
-          wait-for-service-stability: true
+          wait-for-service-stability: false
