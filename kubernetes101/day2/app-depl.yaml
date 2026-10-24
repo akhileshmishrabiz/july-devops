@@ -5,7 +5,7 @@ metadata:
   labels:
     app: app
 spec:
-  replicas: 4
+  replicas: 2
   selector:
     matchLabels:
       app: app
@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: app
-        image: appwithdb:1.0
+        image: day2
         ports:
         - containerPort: 8080
         env:
@@ -47,4 +47,5 @@ type: Opaque
 stringData:
   # DB_URL: postgresql://postgres:Admin1234@10.96.66.160:5432/postgres
   DB_URL: postgresql://postgres:Admin1234@postgres-service.default.svc.cluster.local:5432/postgres
+  ONE_MORE_URL: postgresql://postgres:Admin1234@postgres-service.default.svc.cluster.local:5432/postgres
 ---

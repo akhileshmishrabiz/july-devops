@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  APP_TITLE: DevOps Incident Arena
+  ENVIRONMENT: Kubernetes
+  LAB_TITLE: The Full Filesystem
+  LAB_PROMPT: Find the largest top-level directories under /var without crossing into other mounted filesystems, then sort the results by size.
+  LAB_HINT: Use du with -x, -h, and a maximum depth of 1, then pipe the result into sort -h.
+  LAB_ANSWER: du -xhd1 /var | sort -h
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: 2tierapp
+  labels:
+    app: app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: app
+  template:
+    metadata:
+      labels:
+        app: app
+    spec:
+      containers:
+      - name: app
+        image: day3
+        ports:
+        - containerPort: 8080
+        env:
+          - name: SECRET_DIR
+            value: /etc/postgres-secret
+          - name: CONFIG_DIR
+            value: /etc/app-config
+        volumeMounts:
+          - name: postgres-secretcd
+            mountPath: /etc/postgres-secret
+            readOnly: true
+          - name: app-config
+            mountPath: /etc/app-config
+            readOnly: true
+      volumes:
+        - name: postgres-secret
+          secret:
+            secretName: postgres-secret
+            items:
+              - key: DB_URL
+                path: DB_URL
+        - name: app-config
+          configMap:
+            name: app-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app-service
+spec:
+  selector:
+    app: app
+  ports:
+  - protocol: TCP
+    port: 8080
+    targetPort: 8080
+---
