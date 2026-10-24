@@ -1,0 +1,1 @@
+Use du with -x, -h, and a maximum depth of 1, then pipe the result into sort -h.

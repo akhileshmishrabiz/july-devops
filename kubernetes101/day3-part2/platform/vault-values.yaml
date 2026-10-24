@@ -1,0 +1,16 @@
+injector:
+  enabled: false
+
+server:
+  dev:
+    enabled: true
+    devRootToken: root
+  dataStorage:
+    enabled: false
+  serviceAccount:
+    create: true
+    name: vault
+
+ui:
+  enabled: true
+  serviceType: ClusterIP
