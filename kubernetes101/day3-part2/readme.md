@@ -49,7 +49,6 @@ helm upgrade --install vault hashicorp/vault \
   --values platform/vault-values.yaml \
   --wait
 
-kubectl apply -f platform/vault-token-reviewer.yaml
 kubectl wait --namespace vault \
   --for=condition=Ready pod/vault-0 \
   --timeout=120s
@@ -82,41 +81,6 @@ helm upgrade --install external-secrets external-secrets/external-secrets \
 
 These commands execute the Vault CLI inside `vault-0`.
 
-Enable Kubernetes authentication:
-
-```bash
-kubectl exec -n vault vault-0 -- \
-  env VAULT_TOKEN="$VAULT_ROOT_TOKEN" \
-  vault auth enable kubernetes
-
-kubectl exec -n vault vault-0 -- \
-  env VAULT_TOKEN="$VAULT_ROOT_TOKEN" \
-  vault write auth/kubernetes/config \
-  kubernetes_host=https://kubernetes.default.svc:443
-```
-
-Create a read-only policy for this lab's KV v2 path:
-
-```bash
-kubectl exec -i -n vault vault-0 -- \
-  env VAULT_TOKEN="$VAULT_ROOT_TOKEN" \
-  vault policy write external-secrets - \
-  < platform/external-secrets-policy.hcl
-```
-
-Allow the `external-secrets-vault` service account in `default` to use that
-policy:
-
-```bash
-kubectl exec -n vault vault-0 -- \
-  env VAULT_TOKEN="$VAULT_ROOT_TOKEN" \
-  vault write auth/kubernetes/role/external-secrets \
-  bound_service_account_names=external-secrets-vault \
-  bound_service_account_namespaces=default \
-  policies=external-secrets \
-  ttl=1h
-```
-
 Create the database values in Vault. Use an alphanumeric password because
 ESO uses it to construct a PostgreSQL URL:
 
@@ -139,8 +103,17 @@ kubectl exec -n vault vault-0 -- \
 
 ## 4. Create the ESO resources
 
+Create the Kubernetes Secret used by ESO to authenticate to Vault. This is
+created imperatively and is not stored in a YAML file:
+
 ```bash
-kubectl apply -f external-secrets/service-account.yaml
+kubectl create secret generic vault-token \
+  --namespace default \
+  --from-literal=token="$VAULT_ROOT_TOKEN" \
+  --dry-run=client \
+  --output=yaml |
+kubectl apply -f -
+
 kubectl apply -f external-secrets/secret-store.yaml
 kubectl apply -f external-secrets/external-secret.yaml
 
@@ -152,6 +125,9 @@ kubectl wait --for=condition=Ready \
   externalsecret/postgres \
   --timeout=120s
 ```
+
+The root token is used only to simplify this disposable lab. In production,
+create a restricted Vault token or use Vault Kubernetes authentication.
 
 ESO now creates and owns `postgres-secret`. Verify the generated key names
 without decoding the values:

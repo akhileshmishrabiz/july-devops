@@ -50,7 +50,7 @@ spec:
             readOnly: true
       containers:
       - name: app
-        image: day3-part2:1.0
+        image: day3
         ports:
         - containerPort: 8080
         env:
