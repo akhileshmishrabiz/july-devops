@@ -1,0 +1,108 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgres-password-rotation
+spec:
+  schedule: "0 2 * * 0"
+  suspend: true
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      ttlSecondsAfterFinished: 600
+      template:
+        spec:
+          restartPolicy: Never
+          initContainers:
+            - name: update-vault
+              image: hashicorp/vault:2.0.4
+              securityContext:
+                runAsUser: 0
+              env:
+                - name: VAULT_ADDR
+                  value: http://vault.vault.svc.cluster.local:8200
+                - name: VAULT_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: vault-token
+                      key: token
+              command:
+                - sh
+                - -ec
+              args:
+                - |
+                  OLD_PASSWORD="$(cat /etc/postgres-secret/POSTGRES_PASSWORD)"
+                  DB_USER="$(cat /etc/postgres-secret/POSTGRES_USER)"
+                  DB_NAME="$(cat /etc/postgres-secret/POSTGRES_DB)"
+                  NEW_PASSWORD="Db$(date +%s)$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 12)"
+
+                  printf '%s' "$OLD_PASSWORD" > /work/old-password
+                  printf '%s' "$NEW_PASSWORD" > /work/new-password
+                  printf '%s' "$DB_USER" > /work/db-user
+                  printf '%s' "$DB_NAME" > /work/db-name
+                  chmod 600 /work/*
+
+                  vault kv patch secret/day3-part2/postgres \
+                    password="$NEW_PASSWORD"
+                  echo "Updated the password in Vault"
+              volumeMounts:
+                - name: postgres-secret
+                  mountPath: /etc/postgres-secret
+                  readOnly: true
+                - name: rotation-data
+                  mountPath: /work
+          containers:
+            - name: update-postgres
+              image: postgres:15
+              command:
+                - sh
+                - -ec
+              args:
+                - |
+                  OLD_PASSWORD="$(cat /work/old-password)"
+                  NEW_PASSWORD="$(cat /work/new-password)"
+                  DB_USER="$(cat /work/db-user)"
+                  DB_NAME="$(cat /work/db-name)"
+
+                  for DB_HOST in $(getent ahostsv4 postgres-service | awk '{print $1}' | sort -u)
+                  do
+                    PGPASSWORD="$OLD_PASSWORD" psql \
+                      --host="$DB_HOST" \
+                      --username="$DB_USER" \
+                      --dbname="$DB_NAME" \
+                      --set=ON_ERROR_STOP=1 \
+                      --command="ALTER ROLE \"$DB_USER\" WITH PASSWORD '$NEW_PASSWORD';"
+                  done
+                  echo "Updated the password in PostgreSQL"
+
+                  for attempt in $(seq 1 90)
+                  do
+                    if [ "$(cat /etc/postgres-secret/POSTGRES_PASSWORD)" = "$NEW_PASSWORD" ]
+                    then
+                      echo "ESO synchronized the new password"
+                      exit 0
+                    fi
+                    sleep 2
+                  done
+
+                  echo "Timed out waiting for ESO" >&2
+                  exit 1
+              volumeMounts:
+                - name: postgres-secret
+                  mountPath: /etc/postgres-secret
+                  readOnly: true
+                - name: rotation-data
+                  mountPath: /work
+          volumes:
+            - name: postgres-secret
+              secret:
+                secretName: postgres-secret
+                items:
+                  - key: POSTGRES_PASSWORD
+                    path: POSTGRES_PASSWORD
+                  - key: POSTGRES_USER
+                    path: POSTGRES_USER
+                  - key: POSTGRES_DB
+                    path: POSTGRES_DB
+            - name: rotation-data
+              emptyDir: {}

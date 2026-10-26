@@ -187,33 +187,44 @@ Vault KV v2
 
 ## Rotate the database password
 
-Changing Vault alone does not change the password already stored inside
-PostgreSQL. Change PostgreSQL first, then update Vault:
+`rotate-db-creds-job.yaml` defines a suspended
+`postgres-password-rotation` CronJob. Each run generates a password, updates
+Vault, changes the password on every PostgreSQL endpoint, and waits for ESO
+to update the mounted Secret.
+
+Create the CronJob:
 
 ```bash
-export NEW_PASSWORD='VaultDb2027'
-
-kubectl exec postgres-0 -- \
-  psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
-  -c "ALTER ROLE postgres WITH PASSWORD '${NEW_PASSWORD}';"
-
-kubectl exec -n vault vault-0 -- \
-  env VAULT_TOKEN="$VAULT_ROOT_TOKEN" \
-  vault kv patch secret/day3-part2/postgres \
-  password="$NEW_PASSWORD"
+kubectl apply -f rotate-db-creds-job.yaml
 ```
 
-ESO checks Vault every 15 seconds. To request an immediate reconciliation:
+Run it manually:
 
 ```bash
-kubectl annotate externalsecret postgres \
-  force-sync="$(date +%s)" \
-  --overwrite
+kubectl create job \
+  --from=cronjob/postgres-password-rotation \
+  "postgres-password-rotation-$(date +%s)"
+
+kubectl logs -f job/$(kubectl get jobs \
+  --sort-by=.metadata.creationTimestamp \
+  -o jsonpath='{.items[-1:].metadata.name}')
 ```
 
-Kubernetes then updates the mounted Secret volumes. This can take roughly
-one minute. The app rereads `DB_URL` for every database connection, so it
-recovers with the new password without an app rollout.
+Enable the weekly Sunday 02:00 schedule:
+
+```bash
+kubectl patch cronjob postgres-password-rotation \
+  --type=merge \
+  -p '{"spec":{"suspend":false}}'
+```
+
+Suspend scheduled rotations again with:
+
+```bash
+kubectl patch cronjob postgres-password-rotation \
+  --type=merge \
+  -p '{"spec":{"suspend":true}}'
+```
 
 ## Cleanup
 
