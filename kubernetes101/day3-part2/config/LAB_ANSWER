@@ -1,0 +1,1 @@
+du -xhd1 /var | sort -h

@@ -17,3 +17,9 @@ kind load docker-image appwithdb:1.0 --name day2
 postgres-service   default   
 
 if you cretease aservice A in namespace B -> dns will be  A.B.svc.cluster.local
+
+
+
+kind load docker-image day2 --name day2
+
+kind load docker-image day3 --name day3

@@ -1,0 +1,9 @@
+recommender:
+  enabled: true
+
+updater:
+  enabled: true
+
+admissionController:
+  enabled: true
+  generateCertificate: true
