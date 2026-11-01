@@ -1,0 +1,124 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: 3-tier-app-eks
+  labels:
+    app: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      initContainers:
+        - name: wait-for-database
+          image: postgres:13
+          command:
+            - /bin/sh
+            - -c
+            - |
+              until PGPASSWORD="${DB_PASSWORD}" psql \
+                --host="${DB_HOST}" \
+                --port="${DB_PORT}" \
+                --username="${DB_USERNAME}" \
+                --dbname="${DB_NAME}" \
+                --command="SELECT 1" >/dev/null 2>&1; do
+                echo "Waiting for PostgreSQL at ${DB_HOST}:${DB_PORT}..."
+                sleep 5
+              done
+              echo "PostgreSQL is reachable."
+          envFrom:
+            - configMapRef:
+                name: app-config
+            - secretRef:
+                name: app-secret
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+      containers:
+        - name: backend
+          image: 879381241087.dkr.ecr.ap-south-1.amazonaws.com/eks-3tierapp:backend
+          imagePullPolicy: Always # If you want to pull the image every time
+          command:
+            - /bin/bash
+            - -c
+            - ./migrate.sh && exec gunicorn --bind 0.0.0.0:8000 --workers 2 --threads 2 --timeout 60 run:app
+          envFrom:
+            - configMapRef:
+                name: app-config
+            - secretRef:
+                name: app-secret
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: 3-tier-app-eks
+spec:
+  type: ClusterIP
+  selector:
+    app: backend
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+      protocol: TCP
+
+---
+# use nodeport servive here for demo
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: backend
+#   namespace: 3-tier-app-eks
+# spec:
+#   type: NodePort
+#   selector:
+#     app: backend
+#   ports:
+#     - name: http
+#       port: 8000
+#       targetPort: http
+#       # 30000–32767
+#       nodePort: 30800
+#       protocol: TCP

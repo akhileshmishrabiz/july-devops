@@ -9,10 +9,10 @@ spec:
     kind: Deployment
     name: hpa-app
   minReplicas: 1
-  maxReplicas: 8
+  maxReplicas: 20
   behavior:
     scaleUp:
-      stabilizationWindowSeconds: 0
+      stabilizationWindowSeconds: 5
       policies:
         - type: Percent
           value: 100
@@ -22,7 +22,7 @@ spec:
           periodSeconds: 15
       selectPolicy: Max
     scaleDown:
-      stabilizationWindowSeconds: 30
+      stabilizationWindowSeconds: 10
       policies:
         - type: Percent
           value: 50

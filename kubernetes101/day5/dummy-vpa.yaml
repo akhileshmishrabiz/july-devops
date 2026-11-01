@@ -1,0 +1,76 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vpa-app
+  namespace: scaling
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vpa-app
+  template:
+    metadata:
+      labels:
+        app: vpa-app
+    spec:
+      containers:
+        - name: app
+          image: python:3.13-alpine
+          command: ["python", "/app/app.py"]
+          env:
+            - name: APP_NAME
+              value: vpa-app
+          ports:
+            - name: http
+              containerPort: 8080
+          resources:
+            requests:
+              cpu: 25m
+              memory: 24Mi
+            limits:
+              cpu: 200m
+              memory: 96Mi
+
+          # Checks whether the application is ready to receive traffic
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 3
+
+          # Restarts the container if the application becomes unhealthy
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+
+          volumeMounts:
+            - name: app-code
+              mountPath: /app
+              readOnly: true
+
+      volumes:
+        - name: app-code
+          configMap:
+            name: load-app
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vpa-app
+  namespace: scaling
+spec:
+  selector:
+    app: vpa-app
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

@@ -23,6 +23,7 @@ spec:
               while true
               do
                 wget -q -O- http://hpa-app/work >/dev/null
+                # wget -q -O- http://hpa-app.scaling.svc.cluster.local:8080/work >/dev/null
               done
           resources:
             requests:
@@ -38,7 +39,7 @@ metadata:
   name: vpa-load
   namespace: scaling
 spec:
-  replicas: 0
+  replicas: 10
   selector:
     matchLabels:
       app: vpa-load

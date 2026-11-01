@@ -1,0 +1,129 @@
+# Apply all probe demos:
+#   kubectl apply -f .
+#
+# Watch the startup probe:
+#   kubectl get pods -n probe-demo -w
+#   kubectl logs -n probe-demo deployment/startup-demo -f
+#   kubectl describe pod -n probe-demo -l app=startup-demo
+#
+# Change STARTUP_DELAY_SECONDS below to experiment. The current probe allows
+# 15 failures, 2 seconds apart, giving the app roughly 30 seconds to start.
+# A delay longer than that causes Kubernetes to repeatedly restart the app.
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: startup-demo-code
+  namespace: probe-demo
+data:
+  app.py: |
+    import os
+    import time
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+    delay = int(os.getenv("STARTUP_DELAY_SECONDS", "20"))
+
+
+    def log(message):
+        print(
+            f"{time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())} {message}",
+            flush=True,
+        )
+
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            if self.path == "/healthz":
+                body = b"started\n"
+                self.send_response(200)
+            else:
+                body = b"startup probe demo is running\n"
+                self.send_response(200)
+            self.send_header("Content-Type", "text/plain")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, *_):
+            return
+
+
+    log(f"event=startup_delay seconds={delay}")
+    time.sleep(delay)
+    log("event=server_started port=8080")
+    ThreadingHTTPServer(("0.0.0.0", 8080), Handler).serve_forever()
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: startup-demo
+  namespace: probe-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: startup-demo
+  template:
+    metadata:
+      labels:
+        app: startup-demo
+    spec:
+      containers:
+        - name: app
+          image: python:3.13-alpine
+          command: ["python", "-u", "/app/app.py"]
+          env:
+            - name: STARTUP_DELAY_SECONDS
+              value: "20"
+          ports:
+            - name: http
+              containerPort: 8080
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 60
+            timeoutSeconds: 1
+            failureThreshold: 15
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 1
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 2
+            timeoutSeconds: 1
+            failureThreshold: 1
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          volumeMounts:
+            - name: app-code
+              mountPath: /app
+              readOnly: true
+      volumes:
+        - name: app-code
+          configMap:
+            name: startup-demo-code
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: startup-demo
+  namespace: probe-demo
+spec:
+  selector:
+    app: startup-demo
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

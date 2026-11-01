@@ -1,0 +1,348 @@
+# Apply:
+#   kubectl apply -f memory-hpa-lab.yaml
+#
+# Start sustained memory load (increase gradually to watch HPA scale):
+#   kubectl scale deployment memory-load -n memory-hpa-lab --replicas=2
+#   kubectl scale deployment memory-load -n memory-hpa-lab --replicas=6
+#   kubectl scale deployment memory-load -n memory-hpa-lab --replicas=10
+#
+# Trigger deliberate OOM kills (stop it after observing the restart):
+#   kubectl scale deployment oom-load -n memory-hpa-lab --replicas=1
+#   kubectl scale deployment oom-load -n memory-hpa-lab --replicas=0
+#
+# Watch scaling, memory, restarts, and application logs:
+#   kubectl get hpa,pods -n memory-hpa-lab -w
+#   kubectl top pods -n memory-hpa-lab
+#   kubectl logs -n memory-hpa-lab -l app=memory-app -f --prefix --max-log-requests=10
+#   kubectl get pods -n memory-hpa-lab
+#   kubectl logs -n memory-hpa-lab <restarted-pod-name> --previous
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: memory-hpa-lab
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: memory-app-code
+  namespace: memory-hpa-lab
+data:
+  app.py: |
+    import gc
+    import os
+    import threading
+    import time
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+    from urllib.parse import parse_qs, urlparse
+
+    POD_NAME = os.getenv("POD_NAME", "unknown")
+    active_allocations = 0
+    active_lock = threading.Lock()
+
+
+    def log(message):
+        print(
+            f"{time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())} "
+            f"pod={POD_NAME} {message}",
+            flush=True,
+        )
+
+
+    def rss_mib():
+        try:
+            with open("/proc/self/status", encoding="utf-8") as status:
+                for line in status:
+                    if line.startswith("VmRSS:"):
+                        return int(line.split()[1]) / 1024
+        except OSError:
+            pass
+        return -1
+
+
+    def integer_parameter(query, name, default, minimum, maximum):
+        try:
+            value = int(query.get(name, [str(default)])[0])
+        except ValueError:
+            value = default
+        return max(minimum, min(value, maximum))
+
+
+    class Handler(BaseHTTPRequestHandler):
+        protocol_version = "HTTP/1.1"
+
+        def reply(self, status, body):
+            encoded = body.encode()
+            self.send_response(status)
+            self.send_header("Content-Type", "text/plain")
+            self.send_header("Content-Length", str(len(encoded)))
+            self.end_headers()
+            self.wfile.write(encoded)
+
+        def do_GET(self):
+            parsed = urlparse(self.path)
+            query = parse_qs(parsed.query)
+
+            if parsed.path == "/healthz":
+                self.reply(200, "ok\n")
+                return
+
+            if parsed.path == "/status":
+                with active_lock:
+                    count = active_allocations
+                message = (
+                    f"pod={POD_NAME} rss_mib={rss_mib():.1f} "
+                    f"active_allocations={count}\n"
+                )
+                log(f"event=status rss_mib={rss_mib():.1f} active={count}")
+                self.reply(200, message)
+                return
+
+            if parsed.path == "/memory":
+                size_mib = integer_parameter(query, "mb", 12, 1, 128)
+                seconds = integer_parameter(query, "seconds", 30, 1, 300)
+                self.hold_memory(size_mib, seconds)
+                return
+
+            if parsed.path == "/oom":
+                size_mib = integer_parameter(query, "mb", 256, 1, 1024)
+                self.consume_for_oom(size_mib)
+                return
+
+            self.reply(
+                200,
+                "Endpoints:\n"
+                "  /memory?mb=12&seconds=30  retain memory temporarily\n"
+                "  /oom?mb=256              exceed the container limit\n"
+                "  /status                  show current process memory\n"
+                "  /healthz                 health check\n",
+            )
+
+        def hold_memory(self, size_mib, seconds):
+            global active_allocations
+
+            with active_lock:
+                active_allocations += 1
+                count = active_allocations
+
+            log(
+                f"event=allocate_start mb={size_mib} seconds={seconds} "
+                f"active={count} rss_mib={rss_mib():.1f}"
+            )
+            memory = bytearray(size_mib * 1024 * 1024)
+            for offset in range(0, len(memory), 4096):
+                memory[offset] = 1
+
+            log(
+                f"event=allocate_ready mb={size_mib} active={count} "
+                f"rss_mib={rss_mib():.1f}"
+            )
+            time.sleep(seconds)
+            del memory
+            gc.collect()
+
+            with active_lock:
+                active_allocations -= 1
+                count = active_allocations
+
+            log(
+                f"event=allocate_release mb={size_mib} active={count} "
+                f"rss_mib={rss_mib():.1f}"
+            )
+            self.reply(200, f"pod={POD_NAME} held={size_mib}Mi seconds={seconds}\n")
+
+        def consume_for_oom(self, size_mib):
+            log(
+                f"event=oom_start requested_mb={size_mib} "
+                f"rss_mib={rss_mib():.1f}"
+            )
+            memory = bytearray(size_mib * 1024 * 1024)
+            for offset in range(0, len(memory), 4096):
+                memory[offset] = 1
+            log(
+                f"event=oom_allocation_survived mb={size_mib} "
+                f"rss_mib={rss_mib():.1f}"
+            )
+            self.reply(200, f"allocated={len(memory) // (1024 * 1024)}Mi\n")
+
+        def log_message(self, *_):
+            return
+
+
+    log("event=app_start port=8080")
+    ThreadingHTTPServer(("0.0.0.0", 8080), Handler).serve_forever()
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: memory-app
+  namespace: memory-hpa-lab
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: memory-app
+  template:
+    metadata:
+      labels:
+        app: memory-app
+    spec:
+      containers:
+        - name: app
+          image: python:3.13-alpine
+          imagePullPolicy: IfNotPresent
+          command: ["python", "-u", "/app/app.py"]
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          ports:
+            - name: http
+              containerPort: 8080
+          resources:
+            requests:
+              cpu: 20m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 192Mi
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          volumeMounts:
+            - name: app-code
+              mountPath: /app
+              readOnly: true
+      volumes:
+        - name: app-code
+          configMap:
+            name: memory-app-code
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: memory-app
+  namespace: memory-hpa-lab
+spec:
+  selector:
+    app: memory-app
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: memory-app
+  namespace: memory-hpa-lab
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: memory-app
+  minReplicas: 1
+  maxReplicas: 10
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 15
+        - type: Percent
+          value: 100
+          periodSeconds: 15
+      selectPolicy: Max
+    scaleDown:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 30
+  metrics:
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 60
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: memory-load
+  namespace: memory-hpa-lab
+spec:
+  replicas: 10
+  selector:
+    matchLabels:
+      app: memory-load
+  template:
+    metadata:
+      labels:
+        app: memory-load
+    spec:
+      containers:
+        - name: load
+          image: busybox:1.36
+          command:
+            - sh
+            - -ec
+            - |
+              echo "Starting sustained memory load"
+              while true; do
+                wget -q -O- "http://memory-app/memory?mb=12&seconds=30"
+              done
+          resources:
+            requests:
+              cpu: 2m
+              memory: 4Mi
+            limits:
+              cpu: 50m
+              memory: 16Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oom-load
+  namespace: memory-hpa-lab
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: oom-load
+  template:
+    metadata:
+      labels:
+        app: oom-load
+    spec:
+      containers:
+        - name: load
+          image: busybox:1.36
+          command:
+            - sh
+            - -ec
+            - |
+              echo "Starting deliberate OOM load"
+              while true; do
+                wget -q -O- "http://memory-app/oom?mb=256" || true
+                sleep 15
+              done
+          resources:
+            requests:
+              cpu: 2m
+              memory: 4Mi
+            limits:
+              cpu: 50m
+              memory: 16Mi

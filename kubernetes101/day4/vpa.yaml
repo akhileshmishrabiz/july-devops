@@ -9,7 +9,7 @@ spec:
     kind: Deployment
     name: vpa-app
   updatePolicy:
-    updateMode: Auto
+    updateMode: "InPlaceOrRecreate"
     minReplicas: 1
   resourcePolicy:
     containerPolicies:

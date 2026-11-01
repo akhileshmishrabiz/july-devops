@@ -80,3 +80,17 @@ kubectl top pods -n scaling
 
 `cleanup` removes the `scaling` namespace, VPA controllers, and Metrics
 Server.
+
+
+
+```bash
+for node in $(kind get nodes --name k8s-scaling); do
+  echo "Applying limits to $node"
+
+  docker update \
+    --cpus=1 \
+    --memory=1g \
+    --memory-swap=1g \
+    "$node"
+done
+```

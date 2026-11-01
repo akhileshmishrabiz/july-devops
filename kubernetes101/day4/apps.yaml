@@ -44,7 +44,7 @@ metadata:
   name: hpa-app
   namespace: scaling
 spec:
-  replicas: 1
+  replicas: 0
   selector:
     matchLabels:
       app: hpa-app
